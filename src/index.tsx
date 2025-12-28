@@ -103,9 +103,10 @@ body {
         </div>
         <div class="flex items-center">
           <div>
-			this site is running <span class="nes-text is-success">warp : [box]</span>
-		  </div>
-          <a href="https://github.com/yourusername/url-shortener">GitHub</a>
+            this site is running{" "}
+            <span class="nes-text is-success">warp : [box]</span>
+          </div>
+          <a href="https://github.com/hexadecimal233/warp-box">GitHub</a>
         </div>
       </div>
     </body>
@@ -119,7 +120,11 @@ const errorTemplate = (error: string, backInsteadOfHome?: boolean) =>
       <p>{error}</p>
       <button
         type="button"
-        onclick={backInsteadOfHome ? "history.back(); return false;" : "window.location.href = '/'; return false;"}
+        onclick={
+          backInsteadOfHome
+            ? "history.back(); return false;"
+            : "window.location.href = '/'; return false;"
+        }
         class="nes-btn"
       >
         {backInsteadOfHome ? "go back" : "go home"}
@@ -291,11 +296,8 @@ export default new Elysia({
                 target url:
                 {linkTemplate(data.url)}
               </li>
-              <li>
-                total hits: {data.hits}
-              </li>
-              <li id="create_time" data-created-at={data.created_at}>
-              </li>
+              <li>total hits: {data.hits}</li>
+              <li id="create_time" data-created-at={data.created_at}></li>
             </ul>
           </div>
 

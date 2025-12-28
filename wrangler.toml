@@ -1,4 +1,4 @@
-name = "retro-url-shortener"
+name = "warp-box"
 compatibility_date = "2025-12-28"
 compatibility_flags = [ "nodejs_compat" ]
 main = "src/index.tsx"
