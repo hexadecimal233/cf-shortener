@@ -12,10 +12,23 @@ A Cloudflare Worker-powered URL shortener with Elysia.js and a retro 8-bit aesth
 - 🔐 Optional password protection
 - ⚡ Built on Cloudflare Workers for global performance
 - 💾 Cloudflare KV for persistent storage
+- 🤖 Anti-Bot System
 
-## Getting Started
+## Deployment
 
-### Installation
+4. Create a KV namespace in Cloudflare:
+```bash
+wrangler kv:namespace create "LINKS"
+```
+
+Update the `wrangler.toml` file with your KV namespace ID.
+
+You may deploy it to Cloudflare Workers:
+```bash
+bun run deploy
+```
+
+## Development
 
 1. Clone this repository:
 ```bash
@@ -26,38 +39,14 @@ cd warp-box
 2. Install dependencies:
 ```bash
 bun install
-# or
-npm install
 ```
 
-3. Set up environment variables:
+3. Set up environment variables and edit `.env` with your preferences:
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your preferences:
-```
-TITLE=Your App Title
-PASSWORD=your_password # Leave empty for no password
-```
-
-4. Create a KV namespace in Cloudflare:
-```bash
-wrangler kv:namespace create "LINKS"
-```
-
-Update the `wrangler.toml` file with your KV namespace ID.
-
-### Development
-
-Run the development server:
+4. Run the development server:
 ```bash
 bun run dev
-```
-
-### Deployment
-
-Deploy to Cloudflare Workers:
-```bash
-bun run deploy
 ```

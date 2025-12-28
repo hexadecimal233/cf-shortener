@@ -9,6 +9,8 @@ declare namespace Cloudflare {
 		LINKS: KVNamespace;
 		TITLE: string;
 		PASSWORD: string;
+		TURNSTILE_SITE_KEY: string;
+		TURNSTILE_SECRET_KEY: string;
 	}
 }
 interface Env extends Cloudflare.Env {}
@@ -16,7 +18,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "TITLE" | "PASSWORD">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "TITLE" | "PASSWORD" | "TURNSTILE_SITE_KEY" | "TURNSTILE_SECRET_KEY">> {}
 }
 
 // Begin runtime types

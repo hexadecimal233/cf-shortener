@@ -27,8 +27,7 @@ const template = (title: string, content: JSX.Element) => (
         rel="stylesheet"
       />
       <style>
-        {`
-body {
+        {`body {
  	font-family: "Silkscreen", sans-serif;
  	font-weight: 400;
  	font-style: normal;
@@ -91,8 +90,7 @@ body {
 	display: flex;
 	justify-content: center;
 	gap: 1rem;
-}
-`}
+}`}
       </style>
     </head>
     <body>
@@ -103,7 +101,7 @@ body {
         </div>
         <div class="flex items-center">
           <div>
-            this site is running{" "}
+            this site is running
             <span class="nes-text is-success">warp : [box]</span>
           </div>
           <a href="https://github.com/hexadecimal233/warp-box">GitHub</a>
@@ -139,6 +137,24 @@ const linkTemplate = (url: string) => (
     </code>
   </a>
 );
+
+// 服务端验证函数
+async function verifyTurnstile(token: string) {
+  const formData = new FormData();
+  formData.append("secret", env.TURNSTILE_SECRET_KEY);
+  formData.append("response", token);
+
+  const result = await fetch(
+    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+    {
+      body: formData,
+      method: "POST",
+    }
+  );
+
+  const outcome: any = await result.json();
+  return outcome.success;
+}
 
 export default new Elysia({
   adapter: CloudflareAdapter,
@@ -339,8 +355,7 @@ export default new Elysia({
           </section>
 
           <script>
-            {`
-async function deleteLink() {
+            {`async function deleteLink() {
   await fetch(${JSON.stringify(`/${code}`)}, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
@@ -350,37 +365,83 @@ async function deleteLink() {
   window.location.href = "/";
 }
 
-document.getElementById("create_time").textContent = "created at: " + new Date(document.getElementById("create_time").dataset.createdAt).toLocaleString();
-`}
+document.getElementById("create_time").textContent = "created at: " + new Date(document.getElementById("create_time").dataset.createdAt).toLocaleString();`}
           </script>
         </>
       );
     }
   )
 
-  // --- 4. 跳转逻辑  ---
-  .get("/:code", async ({ params: { code }, request, set, redirect }) => {
-    const dataStr = await env.LINKS.get(code);
+  .guard(
+    {
+      beforeHandle: async ({ body, query, set }) => {
+        // 从 Header, Body 或 Query 中尝试获取 token
+        const cfToken =
+          (body as any)?.["cf-turnstile-response"] || query?.["cf-token"];
 
-    if (!dataStr) {
-      set.status = 404;
-      return errorTemplate("link not found");
-    }
+        // 如果没有 Token，返回引导页面
+        if (!cfToken) {
+          set.headers["Content-Type"] = "text/html";
+          return `<!DOCTYPE html>
+<html>
+<head><title>Verifying...</title></head>
+<body>
+    <div id="c"></div>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script>
+        window.onload = function() {
+            turnstile.render('#c', {
+                sitekey: '${env.TURNSTILE_SITE_KEY}',
+                callback: function(token) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('cf-token', token);
+                    window.location.href = url.href;
+                },
+            });
+        };
+    </script>
+</body>
+</html>`;
+        }
 
-    const data: LinkData = JSON.parse(dataStr);
+        // 如果有 Token，进行服务端二次校验
+        const isHuman = await verifyTurnstile(cfToken);
+        if (!isHuman) {
+          set.status = 403;
+          return "Captcha Validation Failed.";
+        }
 
-    data.hits++;
+        // 校验通过，不返回任何内容，程序将继续向下执行逻辑
+      },
+    },
+    (app) =>
+      // --- 4. 跳转逻辑  ---
+      app.get(
+        "/:code",
+        async ({ params: { code }, request, set, redirect }) => {
+          const dataStr = await env.LINKS.get(code);
 
-    // 获取 Referrer
-    const referrer = request.headers.get("referer") || "No Referrer";
+          if (!dataStr) {
+            set.status = 404;
+            return errorTemplate("link not found");
+          }
 
-    data.referrers[referrer] = (data.referrers[referrer] || 0) + 1;
+          const data: LinkData = JSON.parse(dataStr);
 
-    await env.LINKS.put(code, JSON.stringify(data));
+          data.hits++;
 
-    // 执行重定向
-    return redirect(data.url, 302);
-  })
+          // 获取 Referrer
+          const referrer = request.headers.get("referer") || "No Referrer";
+
+          data.referrers[referrer] = (data.referrers[referrer] || 0) + 1;
+
+          await env.LINKS.put(code, JSON.stringify(data));
+
+          // 执行重定向
+          return redirect(data.url, 302);
+        }
+      )
+  )
 
   // --- 5. 删除短链接 ---
   .delete(
