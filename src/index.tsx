@@ -27,7 +27,8 @@ const template = (title: string, content: JSX.Element) => (
         rel="stylesheet"
       />
       <style>
-        {`body {
+        {`
+body {
  	font-family: "Silkscreen", sans-serif;
  	font-weight: 400;
  	font-style: normal;
@@ -38,6 +39,10 @@ const template = (title: string, content: JSX.Element) => (
 	align-items: center;
 	justify-content: center;
 	margin: 0 auto;
+}
+
+input {
+  font-family: sans-serif;
 }
 
 .container {
@@ -101,7 +106,7 @@ const template = (title: string, content: JSX.Element) => (
         </div>
         <div class="flex items-center">
           <div>
-            this site is running
+            this site is running{" "}
             <span class="nes-text is-success">warp : [box]</span>
           </div>
           <a href="https://github.com/hexadecimal233/warp-box">GitHub</a>
