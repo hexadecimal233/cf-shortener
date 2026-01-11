@@ -8,7 +8,7 @@ A Cloudflare Worker-powered URL shortener with Elysia.js and a retro 8-bit aesth
 
 - 🎮 Retro 8-bit aesthetic design using NES.css
 - 🔗 Simple URL shortening with custom keys
-- 📊 Comprehensive analytics (hits, referrers, creation date)
+- 📊 Comprehensive analytics (views, referrers, creation date)
 - 🔐 Optional password protection
 - ⚡ Built on Cloudflare Workers for global performance
 - 💾 Cloudflare KV for persistent storage
