@@ -5,9 +5,11 @@ A Cloudflare Worker-powered URL shortener with Elysia.js and a retro 8-bit aesth
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/hexadecimal233/warp-box)
 
 TODOs:
+
 - [ ] Captcha when creating a link
 - [ ] Store known sessions
 - [ ] Auto destroy after no visit for a while
+- [ ] Alias validation
 
 ## Creating a project
 
