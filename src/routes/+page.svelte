@@ -2,8 +2,9 @@
 import type { SubmitFunction } from "@sveltejs/kit"
 import { enhance } from "$app/forms"
 import { links } from "../store/client"
+import { Turnstile } from "svelte-turnstile"
 
-let { form } = $props()
+let { form, data } = $props()
 
 const submitHandler: SubmitFunction = () => {
   return async ({ result, update }) => {
@@ -105,6 +106,10 @@ const removeLinkFromStash = (alias: string) => {
         class="input input-bordered w-full"
         placeholder="If you set one" />
     </div>
+
+    {#if data.turnstileSiteKey}
+      <Turnstile siteKey={data.turnstileSiteKey} />
+    {/if}
 
     <button type="submit" class="btn btn-primary w-full font-bold">Shorten It!</button>
   </form>

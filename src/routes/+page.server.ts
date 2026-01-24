@@ -1,14 +1,44 @@
 import { fail } from "@sveltejs/kit"
-import type { Actions } from "./$types"
+import type { Actions, PageServerLoad } from "./$types"
+
+export const load: PageServerLoad = async ({ platform }) => {
+  return {
+    turnstileSiteKey: platform?.env.TURNSTILE_SITE_KEY,
+  }
+}
 
 export const actions = {
   default: async ({ request, platform }) => {
     const formData = await request.formData()
     const body = Object.fromEntries(formData)
 
+    // 0. verify turnstile
+    const turnstileToken = body["cf-turnstile-response"] as string
+    const turnstileSecret = platform?.env.TURNSTILE_SECRET_KEY
+    if (turnstileSecret) {
+      if (!turnstileToken) {
+        return fail(400, { error: "captcha required", retry: true })
+      }
+
+      const verifyFormData = new FormData()
+      verifyFormData.append("secret", turnstileSecret)
+      verifyFormData.append("response", turnstileToken)
+      verifyFormData.append("remoteip", request.headers.get("CF-Connecting-IP") || "")
+
+      const result = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+        body: verifyFormData,
+        method: "POST",
+      })
+
+      const outcome = (await result.json()) as any
+      if (!outcome.success) {
+        return fail(400, { error: "captcha failed", retry: true })
+      }
+    }
+
     // 1. check password
-    if ((body.creation_password || "") !== platform?.env.PASSWORD) {
-      return fail(403, { error: "the password is wrong...", retry: true })
+    if ((body.creation_password || "") !== (platform?.env.PASSWORD || "")) {
+      return fail(403, { error: "the password is wrong", retry: true })
     }
 
     // 2. process alias
