@@ -30,7 +30,7 @@ A modern URL shortener built with [SvelteKit](https://kit.svelte.dev/) and [Clou
 
    - `PUBLIC_TITLE`: The title of your application.
    - `PASSWORD`: Optional password to protect link creation.
-   - `TURNSTILE_SITE_KEY`: Your Cloudflare Turnstile Site Key (optional).
+   - `PUBLIC_TURNSTILE_SITE_KEY`: Your Cloudflare Turnstile Site Key (optional).
    - `TURNSTILE_SECRET_KEY`: Your Cloudflare Turnstile Secret Key (optional).
 
    If you are using Cloudflare Turnstile, make sure to configure your site keys in your environment or code as needed.

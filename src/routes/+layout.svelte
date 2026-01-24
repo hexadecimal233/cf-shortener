@@ -1,20 +1,20 @@
 <script lang="ts">
 import "./app.css"
-import { PUBLIC_TITLE } from "$env/static/public"
+import { env } from '$env/dynamic/public';
 import favicon from "$lib/assets/favicon.svg"
 
 let { children } = $props()
 </script>
 
 <svelte:head>
-  <title>{PUBLIC_TITLE}</title>
+  <title>{env.PUBLIC_TITLE}</title>
   <link rel="icon" href={favicon} />
 </svelte:head>
 <div class="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4">
   <div class="card w-full max-w-lg bg-base-100">
     <div class="card-body gap-6">
       <header class="text-center">
-        <h1 class="text-3xl font-bold">{PUBLIC_TITLE}</h1>
+        <h1 class="text-3xl font-bold">{env.PUBLIC_TITLE}</h1>
       </header>
 
       <main class="space-y-4">{@render children()}</main>

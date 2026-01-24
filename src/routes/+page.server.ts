@@ -1,18 +1,12 @@
 import { fail } from "@sveltejs/kit"
-import type { Actions, PageServerLoad } from "./$types"
-
-export const load: PageServerLoad = async ({ platform }) => {
-  return {
-    turnstileSiteKey: platform?.env.TURNSTILE_SITE_KEY,
-  }
-}
+import type { Actions } from "./$types"
 
 export const actions = {
   default: async ({ request, platform }) => {
     const formData = await request.formData()
     const body = Object.fromEntries(formData)
 
-    // 0. verify turnstile
+    // 0. verify turnstile if exists
     const turnstileToken = body["cf-turnstile-response"] as string
     const turnstileSecret = platform?.env.TURNSTILE_SECRET_KEY
     if (turnstileSecret) {
