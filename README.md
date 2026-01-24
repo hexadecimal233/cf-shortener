@@ -1,4 +1,4 @@
-# warp : [box]
+# warp-box
 
 A Cloudflare Worker-powered URL shortener with Elysia.js and a retro 8-bit aesthetic.
 
@@ -7,5 +7,4 @@ A Cloudflare Worker-powered URL shortener with Elysia.js and a retro 8-bit aesth
 TODOs:
 
 - [ ] Captcha when creating a link
-- [ ] Auto destroy after no visit for a while
 

@@ -1,8 +1,7 @@
 <script lang="ts">
+import type { SubmitFunction } from "@sveltejs/kit"
 import { enhance } from "$app/forms"
-import type { SubmitFunction } from "./$types"
 import { links } from "../store/client"
-import { deleteLink } from "../utils/index"
 
 let { form } = $props()
 
@@ -25,112 +24,122 @@ const submitHandler: SubmitFunction = () => {
     }
   }
 }
+
+const removeLinkFromStash = (alias: string) => {
+  if (!confirm("Remove this link from your history?")) return
+  links.update((state) => ({
+    ...state,
+    links: state.links.filter((l) => l.alias !== alias),
+  }))
+}
 </script>
 
 {#if form?.success}
-  <h2>yo the link's all set^^</h2>
+  <div class="flex flex-col items-center gap-6 text-center w-full">
+    <h2 class="text-2xl font-bold">Link Ready!</h2>
+    <p>
+      Your link is:
+      <a href={form.finalUrl} target="_blank" class="link link-primary text-xl font-bold"
+        >{form.finalUrl}</a
+      >
+    </p>
 
-  <p>
-    your link is:
-    <a href={form.finalUrl} target="_blank" class="nes-text is-primary">{form.finalUrl}</a>
-  </p>
+    <div class="alert alert-success">
+      <div class="flex flex-col items-center gap-2 w-full">
+        <h3 class="font-bold text-lg">Success</h3>
+        <p class="text-sm">
+          Please keep the link secure, it will be gone once you clear your stash!
+        </p>
+        <a href="/stats/{form.alias}?key={form.key}" class="btn btn-outline btn-sm mt-2"
+          >See Stats</a
+        >
+      </div>
+    </div>
 
-  <div class="nes-container with-title">
-    <p class="title">warning</p>
-    <p>please keep the link secure, cuz it will be gone once you leave this page!</p>
-    <a href="/stats/{form.alias}?key={form.key}" class="nes-btn is-primary"> see stats </a>
-  </div>
-
-  <div class="action-buttons" style="margin-top: 1rem;">
-    <a href="/" class="nes-btn">back to home</a>
+    <div class="pt-2"><a href="/" class="btn btn-outline">Back to Home</a></div>
   </div>
 {:else}
-  <form method="POST" use:enhance={submitHandler} class="contents">
+  <form method="POST" use:enhance={submitHandler} class="form-control w-full space-y-4">
     {#if form?.error}
-      <p class="nes-text is-error">{form.error}</p>
+      <div role="alert" class="alert alert-error"><span>{form.error}</span></div>
     {/if}
 
-    <div class="nes-field">
-      <label for="url">original url</label>
+    <div>
+      <div class="label"><span class="label-text">Original URL</span></div>
       <input
         type="url"
         name="url"
-        id="url"
-        class="nes-input"
+        class="input input-bordered w-full"
         placeholder="https://example.com"
         required />
     </div>
 
-    <div class="nes-field">
-      <label for="alias">custom alias (optional)</label>
+    <div>
+      <div class="label"><span class="label-text">Custom Alias (optional)</span></div>
       <input
         type="text"
         name="alias"
-        id="alias"
-        class="nes-input"
-        placeholder="leave empty to generate random alias" />
+        class="input input-bordered w-full"
+        placeholder="Leave empty for random" />
     </div>
 
-    <div class="nes-field">
-      <label for="expire_at">expire at (optional)</label>
-      <input type="datetime-local" name="expire_at" id="expire_at" class="nes-input" />
+    <div>
+      <div class="label"><span class="label-text">Expire At (optional)</span></div>
+      <input type="datetime-local" name="expire_at" class="input input-bordered w-full" />
     </div>
 
-    <div class="nes-field">
-      <label for="burn_after_views">burn after views (optional)</label>
+    <div>
+      <div class="label"><span class="label-text">Burn After Views (optional)</span></div>
       <input
         type="number"
         name="burn_after_views"
-        id="burn_after_views"
-        class="nes-input"
-        placeholder="leave empty to never burn" />
+        class="input input-bordered w-full"
+        placeholder="Leave empty to never burn" />
     </div>
 
-    <div class="nes-field">
-      <label for="creation_password">creation password</label>
+    <div>
+      <div class="label"><span class="label-text">Creation Password</span></div>
       <input
         type="password"
         name="creation_password"
-        id="creation_password"
-        class="nes-input"
-        placeholder="if you set one" />
+        class="input input-bordered w-full"
+        placeholder="If you set one" />
     </div>
 
-    <button type="submit" class="nes-btn is-primary w-full">let the magic happen!</button>
+    <button type="submit" class="btn btn-primary w-full font-bold">Shorten It!</button>
   </form>
 {/if}
 
 {#if $links.links.length > 0}
-  <div class="nes-container with-title" style="margin-top: 2rem; width: 100%;">
-    <p class="title">your stash</p>
-    <div class="nes-list">
-      {#each $links.links as link}
-        <div
-          class="nes-container is-rounded"
-          style="margin-bottom: 1rem; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
-          <div
-            style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 1rem;">
-            <a href="/{link.alias}" target="_blank" class="nes-text is-primary">/{link.alias}</a>
-            <br />
-            <span class="nes-text is-disabled" style="font-size: 0.8em;">{link.url}</span>
+  <div class="card bg-base-100 w-full mt-8 border border-base-200">
+    <div class="card-body p-4">
+      <h3 class="card-title text-lg border-b border-base-200 pb-2 mb-2">Your Stash</h3>
+      <div class="flex flex-col gap-3">
+        {#each $links.links as link}
+          <div class="flex justify-between items-center gap-4 p-3 bg-base-200 rounded-lg">
+            <div class="overflow-hidden min-w-0">
+              <a href="/{link.alias}" target="_blank" class="link link-primary font-bold text-lg"
+                >/{link.alias}</a
+              >
+              <div class="text-xs opacity-70 truncate mt-1">{link.url}</div>
+            </div>
+            <div class="join shrink-0">
+              <a
+                href="/stats/{link.alias}?key={link.key}"
+                class="btn btn-sm btn-square join-item btn-warning"
+                title="Stats">
+                #
+              </a>
+              <button
+                class="btn btn-sm btn-square join-item btn-error"
+                onclick={() => removeLinkFromStash(link.alias)}
+                title="Remove from history">
+                x
+              </button>
+            </div>
           </div>
-          <div style="flex-shrink: 0;">
-            <a
-              href="/stats/{link.alias}?key={link.key}"
-              class="nes-btn is-warning is-small"
-              style="margin-right: 0.5rem;"
-              title="stats"
-              >#</a
-            >
-            <button
-              class="nes-btn is-error is-small"
-              onclick={() => deleteLink(link.alias, link.key)}
-              title="delete">
-              x
-            </button>
-          </div>
-        </div>
-      {/each}
+        {/each}
+      </div>
     </div>
   </div>
 {/if}
