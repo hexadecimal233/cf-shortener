@@ -1,7 +1,30 @@
 <script lang="ts">
 import { enhance } from "$app/forms"
+import type { SubmitFunction } from "./$types"
+import { links } from "../store/client"
+import { deleteLink } from "../utils/index"
 
 let { form } = $props()
+
+const submitHandler: SubmitFunction = () => {
+  return async ({ result, update }) => {
+    await update()
+    if (result.type === "success" && result.data?.success) {
+      const data = result.data
+      links.update((state) => ({
+        ...state,
+        links: [
+          ...state.links,
+          {
+            alias: data.alias,
+            url: data.finalUrl,
+            key: data.key,
+          },
+        ],
+      }))
+    }
+  }
+}
 </script>
 
 {#if form?.success}
@@ -22,7 +45,7 @@ let { form } = $props()
     <a href="/" class="nes-btn">back to home</a>
   </div>
 {:else}
-  <form method="POST" use:enhance class="contents">
+  <form method="POST" use:enhance={submitHandler} class="contents">
     {#if form?.error}
       <p class="nes-text is-error">{form.error}</p>
     {/if}
@@ -75,4 +98,39 @@ let { form } = $props()
 
     <button type="submit" class="nes-btn is-primary w-full">let the magic happen!</button>
   </form>
+{/if}
+
+{#if $links.links.length > 0}
+  <div class="nes-container with-title" style="margin-top: 2rem; width: 100%;">
+    <p class="title">your stash</p>
+    <div class="nes-list">
+      {#each $links.links as link}
+        <div
+          class="nes-container is-rounded"
+          style="margin-bottom: 1rem; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+          <div
+            style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 1rem;">
+            <a href="/{link.alias}" target="_blank" class="nes-text is-primary">/{link.alias}</a>
+            <br />
+            <span class="nes-text is-disabled" style="font-size: 0.8em;">{link.url}</span>
+          </div>
+          <div style="flex-shrink: 0;">
+            <a
+              href="/stats/{link.alias}?key={link.key}"
+              class="nes-btn is-warning is-small"
+              style="margin-right: 0.5rem;"
+              title="stats"
+              >#</a
+            >
+            <button
+              class="nes-btn is-error is-small"
+              onclick={() => deleteLink(link.alias, link.key)}
+              title="delete">
+              x
+            </button>
+          </div>
+        </div>
+      {/each}
+    </div>
+  </div>
 {/if}

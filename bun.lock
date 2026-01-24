@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "cf-shortener-svelte",
+      "dependencies": {
+        "svelte-persisted-store": "^0.12.0",
+      },
       "devDependencies": {
         "@biomejs/biome": "^2.3.11",
         "@sveltejs/adapter-auto": "^7.0.0",
@@ -13,6 +16,7 @@
         "@tailwindcss/vite": "^4.1.17",
         "svelte": "^5.45.6",
         "svelte-check": "^4.3.4",
+        "svelte-turnstile": "^0.11.0",
         "tailwindcss": "^4.1.17",
         "typescript": "^5.9.3",
         "vite": "^7.2.6",
@@ -395,6 +399,10 @@
 
     "svelte-check": ["svelte-check@4.3.5", "", { "dependencies": { "@jridgewell/trace-mapping": "^0.3.25", "chokidar": "^4.0.1", "fdir": "^6.2.0", "picocolors": "^1.0.0", "sade": "^1.7.4" }, "peerDependencies": { "svelte": "^4.0.0 || ^5.0.0-next.0", "typescript": ">=5.0.0" }, "bin": { "svelte-check": "bin/svelte-check" } }, "sha512-e4VWZETyXaKGhpkxOXP+B/d0Fp/zKViZoJmneZWe/05Y2aqSKj3YN2nLfYPJBQ87WEiY4BQCQ9hWGu9mPT1a1Q=="],
 
+    "svelte-persisted-store": ["svelte-persisted-store@0.12.0", "", { "peerDependencies": { "svelte": "^3.48.0 || ^4 || ^5" } }, "sha512-BdBQr2SGSJ+rDWH8/aEV5GthBJDapVP0GP3fuUCA7TjYG5ctcB+O9Mj9ZC0+Jo1oJMfZUd1y9H68NFRR5MyIJA=="],
+
+    "svelte-turnstile": ["svelte-turnstile@0.11.0", "", { "dependencies": { "turnstile-types": "^1.2.3" }, "peerDependencies": { "svelte": "^3.58.0 || ^4.0.0 || ^5.0.0" } }, "sha512-2LFklx9JVsR3fJ7e3fGG1HEAWWEqRq1WfNaVrKgZJ+pzfY2NColiH+wH0kK2yX3DrcGLiJ9vBeTyiLFWotKpLA=="],
+
     "tailwindcss": ["tailwindcss@4.1.18", "", {}, "sha512-4+Z+0yiYyEtUVCScyfHCxOYP06L5Ne+JiHhY2IjR2KWMIWhJOYZKLSGZaP5HkZ8+bY0cxfzwDE5uOmzFXyIwxw=="],
 
     "tapable": ["tapable@2.3.0", "", {}, "sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg=="],
@@ -404,6 +412,8 @@
     "totalist": ["totalist@3.0.1", "", {}, "sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ=="],
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
+
+    "turnstile-types": ["turnstile-types@1.2.3", "", {}, "sha512-EDjhDB9TDwda2JRbhzO/kButPio3JgrC3gXMVAMotxldybTCJQVMvPNJ89rcAiN9vIrCb2i1E+VNBCqB8wue0A=="],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 

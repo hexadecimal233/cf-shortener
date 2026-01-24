@@ -1,5 +1,5 @@
 <script lang="ts">
-import { goto } from "$app/navigation"
+import { deleteLink } from "../../../utils"
 
 let { data } = $props()
 const { linkData, code, origin } = data
@@ -12,23 +12,6 @@ const expireAtStr = linkData.expire_at ? new Date(linkData.expire_at).toLocaleSt
 const sortedReferrers = Object.entries(linkData.referrers || {}).sort(
   ([, a], [, b]) => (b as number) - (a as number),
 )
-
-async function deleteLink() {
-  if (!confirm("Are you sure?")) return
-
-  const response = await fetch(`/${code}`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: linkData.key }),
-  })
-
-  if (response.ok) {
-    alert("link deleted")
-    goto("/")
-  } else {
-    alert("Failed to delete")
-  }
-}
 </script>
 
 <div class="lists">
@@ -75,6 +58,8 @@ async function deleteLink() {
 </div>
 
 <section class="action-buttons" style="margin-top: 2rem; display: flex; gap: 1rem;">
-  <button type="button" onclick={deleteLink} class="nes-btn is-error">delete link</button>
+  <button type="button" onclick={() => deleteLink(code, linkData.key)} class="nes-btn is-error">
+    delete link
+  </button>
   <a href="/" class="nes-btn"> back to home </a>
 </section>

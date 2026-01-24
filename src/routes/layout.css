@@ -1,29 +1,13 @@
 @import 'tailwindcss';
 
-  input {
-    font-family: sans-serif;
-  }
+input {
+  font-family: sans-serif;
+}
 
-  .container {
-    background: white;
-    padding: 2.5rem 2.5rem 1rem 2.5rem;
-    box-shadow: 10px 10px 0px rgba(0, 0, 0, 0.2);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .footer {
-    margin-top: 0.5rem;
-    font-size: 0.8rem;
-    gap: 0.5rem;
-  }
-
-  /* 辅助类名映射原模板中的 CSS */
-  :global(.action-buttons) {
-    margin-top: 1.5rem;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-  }
+/* 辅助类名映射原模板中的 CSS */
+:global(.action-buttons) {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
