@@ -39,7 +39,7 @@ async function handleUpdate(action: LinkAction, value?: string | number | null |
 
   try {
     await updateLink(code, linkData.key, action, value)
-    showMessage("success", "更新成功！页面将在 1 秒后刷新...")
+    showMessage("success", "Update complete! The page will be refreshed in 1 seconds...")
     setTimeout(() => window.location.reload(), 1000)
   } catch (e) {
     showMessage("error", e instanceof Error ? e.message : "操作失败")
