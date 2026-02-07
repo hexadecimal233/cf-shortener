@@ -1,6 +1,6 @@
 import { persisted } from "svelte-persisted-store"
 
-interface Link {
+export interface Link {
   /** URL alias */
   alias: string
   /** Original URL */

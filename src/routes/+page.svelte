@@ -1,29 +1,65 @@
 <script lang="ts">
-import type { SubmitFunction } from "@sveltejs/kit"
-import { enhance } from "$app/forms"
-import { links } from "../store/client"
+import { links, type Link } from "../store/client"
 import { Turnstile } from "svelte-turnstile"
-import { env } from '$env/dynamic/public';
+import { env } from "$env/dynamic/public"
 
-let { form } = $props()
+let url = $state("")
+let alias = $state("")
+let expireAt = $state("")
+let burnAfterViews = $state("")
+let creationPassword = $state("")
+let isLoading = $state(false)
+let errorMessage = $state("")
+let successLink = $state<Link | null>(null)
 
-const submitHandler: SubmitFunction = () => {
-  return async ({ result, update }) => {
-    await update()
-    if (result.type === "success" && result.data?.success) {
-      const data = result.data
+const handleSubmit = async (e: Event) => {
+  e.preventDefault()
+  isLoading = true
+  errorMessage = ""
+  successLink = null
+
+  try {
+    const data: Record<string, string> = {
+      url,
+    }
+    if (alias) data.alias = alias
+    if (expireAt) data.expire_at = expireAt
+    if (burnAfterViews) data.burn_after_views = burnAfterViews
+    if (creationPassword) data.creation_password = creationPassword
+
+    const turnstileToken = (window as any).turnstile?.getResponse()
+    if (turnstileToken) {
+      data["cf-turnstile-response"] = turnstileToken
+    }
+
+    const response = await fetch("/api/links", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+
+    const result = await response.json()
+
+    if (result.success) {
+      const link = {
+        alias: result.result.alias,
+        url: result.finalUrl,
+        key: result.result.key,
+      }
       links.update((state) => ({
         ...state,
-        links: [
-          ...state.links,
-          {
-            alias: data.alias,
-            url: data.finalUrl,
-            key: data.key,
-          },
-        ],
+        links: [...state.links, link],
       }))
+      successLink = link
+    } else {
+      errorMessage = result.error || "Failed to create short link"
     }
+  } catch (error) {
+    errorMessage = "An error occurred while creating the link"
+  } finally {
+    isLoading = false
   }
 }
 
@@ -36,85 +72,87 @@ const removeLinkFromStash = (alias: string) => {
 }
 </script>
 
-{#if form?.success}
-  <div class="flex flex-col items-center gap-6 text-center w-full">
-    <h2 class="text-2xl font-bold">Link Ready!</h2>
-    <p>
-      Your link is:
-      <a href={form.finalUrl} target="_blank" class="link link-primary text-xl font-bold"
-        >{form.finalUrl}</a
-      >
-    </p>
-
-    <div class="alert alert-success">
-      <div class="flex flex-col items-center gap-2 w-full">
-        <h3 class="font-bold text-lg">Success</h3>
-        <p class="text-sm">
-          Please keep the link secure, it will be gone once you clear your stash!
-        </p>
-        <a href="/stats/{form.alias}?key={form.key}" class="btn btn-outline btn-sm mt-2"
-          >See Stats</a
+<form onsubmit={handleSubmit} class="form-control w-full space-y-4">
+  {#if successLink}
+    <div class="flex flex-col items-center gap-6 text-center w-full">
+      <h2 class="text-2xl font-bold">Link Ready!</h2>
+      <p>
+        Your link is:
+        <a href={successLink.url} target="_blank" class="link link-primary text-xl font-bold"
+          >{successLink.url}</a
         >
+      </p>
+
+      <div class="alert alert-success">
+        <div class="flex flex-col items-center gap-2 w-full">
+          <h3 class="font-bold text-lg">Success</h3>
+          <p class="text-sm">
+            Please keep the link secure, it will be gone once you clear your stash!
+          </p>
+          <a
+            href="/stats/{successLink.alias}?key={successLink.key}"
+            class="btn btn-outline btn-sm mt-2"
+            >See Stats</a
+          >
+        </div>
       </div>
     </div>
+  {/if}
 
-    <div class="pt-2"><a href="/" class="btn btn-outline">Back to Home</a></div>
+  {#if errorMessage}
+    <div role="alert" class="alert alert-error"><span>{errorMessage}</span></div>
+  {/if}
+
+  <div>
+    <div class="label"><span class="label-text">Original URL</span></div>
+    <input
+      type="url"
+      bind:value={url}
+      class="input input-bordered w-full"
+      placeholder="https://example.com"
+      required />
   </div>
-{:else}
-  <form method="POST" use:enhance={submitHandler} class="form-control w-full space-y-4">
-    {#if form?.error}
-      <div role="alert" class="alert alert-error"><span>{form.error}</span></div>
-    {/if}
 
-    <div>
-      <div class="label"><span class="label-text">Original URL</span></div>
-      <input
-        type="url"
-        name="url"
-        class="input input-bordered w-full"
-        placeholder="https://example.com"
-        required />
-    </div>
+  <div>
+    <div class="label"><span class="label-text">Custom Alias (optional)</span></div>
+    <input
+      type="text"
+      bind:value={alias}
+      class="input input-bordered w-full"
+      placeholder="Leave empty for random" />
+  </div>
 
-    <div>
-      <div class="label"><span class="label-text">Custom Alias (optional)</span></div>
-      <input
-        type="text"
-        name="alias"
-        class="input input-bordered w-full"
-        placeholder="Leave empty for random" />
-    </div>
+  <div>
+    <div class="label"><span class="label-text">Expire At (optional)</span></div>
+    <input type="datetime-local" bind:value={expireAt} class="input input-bordered w-full" />
+  </div>
 
-    <div>
-      <div class="label"><span class="label-text">Expire At (optional)</span></div>
-      <input type="datetime-local" name="expire_at" class="input input-bordered w-full" />
-    </div>
+  <div>
+    <div class="label"><span class="label-text">Burn After Views (optional)</span></div>
+    <input
+      type="number"
+      bind:value={burnAfterViews}
+      class="input input-bordered w-full"
+      placeholder="Leave empty to never burn" />
+  </div>
 
-    <div>
-      <div class="label"><span class="label-text">Burn After Views (optional)</span></div>
-      <input
-        type="number"
-        name="burn_after_views"
-        class="input input-bordered w-full"
-        placeholder="Leave empty to never burn" />
-    </div>
+  <div>
+    <div class="label"><span class="label-text">Creation Password</span></div>
+    <input
+      type="password"
+      bind:value={creationPassword}
+      class="input input-bordered w-full"
+      placeholder="If you set one" />
+  </div>
 
-    <div>
-      <div class="label"><span class="label-text">Creation Password</span></div>
-      <input
-        type="password"
-        name="creation_password"
-        class="input input-bordered w-full"
-        placeholder="If you set one" />
-    </div>
+  {#if env.PUBLIC_TURNSTILE_SITE_KEY}
+    <Turnstile siteKey={env.PUBLIC_TURNSTILE_SITE_KEY} />
+  {/if}
 
-    {#if env.PUBLIC_TURNSTILE_SITE_KEY}
-      <Turnstile siteKey={env.PUBLIC_TURNSTILE_SITE_KEY} />
-    {/if}
-
-    <button type="submit" class="btn btn-primary w-full font-bold">Shorten It!</button>
-  </form>
-{/if}
+  <button type="submit" disabled={isLoading} class="btn btn-primary w-full font-bold">
+    {isLoading ? "Creating..." : "Shorten It!"}
+  </button>
+</form>
 
 {#if $links.links.length > 0}
   <div class="card bg-base-100 w-full mt-8 border border-base-200">

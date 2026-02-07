@@ -1,6 +1,6 @@
 <script lang="ts">
 import "./app.css"
-import { env } from '$env/dynamic/public';
+import { env } from "$env/dynamic/public"
 import favicon from "$lib/assets/favicon.svg"
 
 let { children } = $props()

@@ -1,57 +1,118 @@
-import { error, redirect, text } from "@sveltejs/kit"
+import { error, json, redirect, text } from "@sveltejs/kit"
 import type { RequestHandler } from "./$types"
+import { deleteLinkSchema, patchLinkSchema } from "$lib/schema"
+import { getLink, updateLinkStats, saveLink, deleteLink as deleteLinkFromDb } from "$lib/db"
+import { ArkErrors } from "@ark/schema"
 
 // 处理 GET /:alias
 export const GET: RequestHandler = async ({ params, request, platform }) => {
   const { alias } = params
 
-  const dataStr = await platform?.env.LINKS.get(alias)
-  if (!dataStr) {
+  // 使用 db.ts 中的函数获取链接
+  const data = await getLink(alias, platform, false)
+  if (!data) {
     return error(404, "link not found")
   }
 
-  const data = JSON.parse(dataStr)
-
-  // 1. 检查是否过期
-  if (data.expire_at && new Date(data.expire_at) < new Date()) {
-    await platform?.env.LINKS.delete(alias)
-    return error(404, "link not found")
-  }
-
-  // 2. 检查是否达到阅后即焚限制
-  if (data.burn_after_views && data.views >= data.burn_after_views) {
-    await platform?.env.LINKS.delete(alias)
-    return error(404, "link not found")
-  }
-
-  // 3. 更新统计数据
-  data.views++
+  // 更新统计数据
   const referrer = request.headers.get("referer") || "No Referrer"
-  data.referrers[referrer] = (data.referrers[referrer] || 0) + 1
+  const updatedData = updateLinkStats(data, referrer)
 
-  // 4. 写回 KV
-  await platform?.env.LINKS.put(alias, JSON.stringify(data))
+  // 写回 KV
+  await saveLink(alias, updatedData, platform)
 
-  // 5. 执行 302 重定向
-  return redirect(302, data.url)
+  // 执行 302 重定向
+  return redirect(302, updatedData.url)
 }
 
 // 处理 DELETE /:alias
 export const DELETE: RequestHandler = async ({ params, request, platform }) => {
   const { alias } = params
-  const { key } = await request.json()
+  const body = await request.json()
 
-  const dataStr = await platform?.env.LINKS.get(alias)
-  if (!dataStr) {
-    return error(404, "link not found")
+  // 使用 arktype 验证请求体
+  const result = deleteLinkSchema(body)
+  if (result instanceof ArkErrors) {
+    return json({ error: result.summary }, { status: 400 })
   }
 
-  const data = JSON.parse(dataStr)
+  const { key } = result
+
+  // 使用 db.ts 中的函数获取链接
+  const data = await getLink(alias, platform, true)
+  if (!data) {
+    return error(404, "link not found")
+  }
 
   if (key !== data.key) {
     return error(403, "wrong key")
   }
 
-  await platform?.env.LINKS.delete(alias)
+  // 使用 db.ts 中的函数删除链接
+  await deleteLinkFromDb(alias, platform)
   return text("link deleted")
+}
+
+// 处理 PATCH /:alias - 管理操作（更新URL、重置统计等）
+export const PATCH: RequestHandler = async ({ params, request, platform }) => {
+  const { alias } = params
+  const body = await request.json()
+
+  // 使用 arktype 验证请求体
+  const result = patchLinkSchema(body)
+  if (result instanceof ArkErrors) {
+    return json({ error: result.summary }, { status: 400 })
+  }
+
+  const { key, action, value } = result
+
+  // 使用 db.ts 中的函数获取链接
+  const data = await getLink(alias, platform, true)
+  if (!data) {
+    return error(404, "link not found")
+  }
+
+  // 验证 Key
+  if (key !== data.key) {
+    return error(403, "wrong key")
+  }
+
+  // 执行管理操作
+  switch (action) {
+    case "update": {
+      // 更新链接属性（URL、过期时间、阅后即焚）
+      if (!value || typeof value !== "object") {
+        return error(400, "invalid update data")
+      }
+      const updateData = value as { url?: string; expire_at?: string | null; burn_after_views?: number | null }
+      if (updateData.url) {
+        data.url = updateData.url
+      }
+      if (updateData.expire_at !== undefined) {
+        data.expire_at = updateData.expire_at ? String(updateData.expire_at) : undefined
+      }
+      if (updateData.burn_after_views !== undefined) {
+        data.burn_after_views = updateData.burn_after_views ? parseInt(String(updateData.burn_after_views)) : undefined
+      }
+      break
+    }
+
+    case "reset_views":
+      // 重置访问数
+      data.views = 0
+      break
+
+    case "clear_stats":
+      // 清除统计（引用来源）
+      data.referrers = {}
+      break
+
+    default:
+      return error(400, "unknown action")
+  }
+
+  // 写回 KV
+  await saveLink(alias, data, platform)
+
+  return text("success")
 }

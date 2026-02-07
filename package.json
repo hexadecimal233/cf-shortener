@@ -33,6 +33,7 @@
     "wrangler": "^4.59.2"
   },
   "dependencies": {
+    "arktype": "^2.1.29",
     "svelte-persisted-store": "^0.12.0"
   }
 }
