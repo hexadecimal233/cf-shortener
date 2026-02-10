@@ -24,9 +24,9 @@ const handleSubmit = async (e: Event) => {
       url,
     }
     if (alias) data.alias = alias
-    if (expireAt) data.expire_at = expireAt
-    if (burnAfterViews) data.burn_after_views = burnAfterViews
-    if (creationPassword) data.creation_password = creationPassword
+    if (expireAt) data.expireAt = expireAt
+    if (burnAfterViews) data.burnAfterViews = burnAfterViews
+    if (creationPassword) data.creationPassword = creationPassword
 
     const turnstileToken = turnstile.getResponse()
     if (turnstileToken) {

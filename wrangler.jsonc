@@ -10,17 +10,19 @@
   "compatibility_flags": ["nodejs_als"],
   "assets": {
     "binding": "ASSETS",
-    "directory": ".svelte-kit/cloudflare"
+    "directory": ".svelte-kit/cloudflare",
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
-  "kv_namespaces": [
+  "d1_databases": [
     {
-      "binding": "LINKS",
-      "id": "b0663926ace645debad31574448845f7"
-    }
-  ]
+      "binding": "DB",
+      "database_name": "WARPBOX_DB",
+      "database_id": "ba83cd6d-a166-4d92-9ca8-7890dbcba56c",
+      "migrations_dir": "drizzle/migrations",
+    },
+  ],
   /**
    * Smart Placement
    * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

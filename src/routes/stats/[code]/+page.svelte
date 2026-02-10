@@ -1,25 +1,41 @@
 <script lang="ts">
-import { deleteLink, updateLink, type LinkAction, type UpdateData } from "../../../utils"
+import { deleteLink, updateLink } from "../../../utils"
+import type { CreateLink } from "$lib/schema"
 
 let { data } = $props()
 const { linkData, code, origin } = data
 
 // 格式化日期逻辑
-const createdAtStr = new Date(linkData.created_at).toLocaleString()
-const expireAtStr = linkData.expire_at ? new Date(linkData.expire_at).toLocaleString() : "never"
+const createdAtStr = new Date(linkData.createdAt).toLocaleString()
+const expireAtStr = linkData.expireAt ? new Date(linkData.expireAt).toLocaleString() : "never"
 
 // 排序后的引用来源列表
 const sortedReferrers = Object.entries(linkData.referrers || {}).sort(
   ([, a], [, b]) => (b as number) - (a as number),
 )
 
+// 使用 structuredClone 创建编辑状态对象，方便状态管理
+let editingState = $state(
+  structuredClone({
+    alias: linkData.url,
+    url: linkData.url,
+    expireAt: linkData.expireAt || "",
+    burnAfterViews: linkData.burnAfterViews?.toString() || "",
+  }),
+)
+
 // 管理状态
 let showManageModal = $state(false)
-let editingUrl = $state(linkData.url)
-let editingExpireAt = $state(linkData.expire_at || "")
-let editingBurnAfterViews = $state(linkData.burn_after_views?.toString() || "")
 let isLoading = $state(false)
 let message = $state<{ type: "success" | "error"; text: string } | null>(null)
+
+// 计算更新数据
+const updateData: CreateLink = $derived({
+  alias: code,
+  url: editingState.url,
+  expireAt: editingState.expireAt || undefined,
+  burnAfterViews: editingState.burnAfterViews ? Number(editingState.burnAfterViews) : undefined,
+})
 
 // 更新消息显示
 function showMessage(type: "success" | "error", text: string, duration = 3000) {
@@ -31,14 +47,54 @@ function showMessage(type: "success" | "error", text: string, duration = 3000) {
   }
 }
 
-// 处理管理操作
-async function handleUpdate(action: LinkAction, value?: string | number | null | UpdateData) {
+// 重置浏览次数
+async function resetViews() {
   if (isLoading) return
   isLoading = true
   message = null
 
   try {
-    await updateLink(code, linkData.key, action, value)
+    await updateLink(code, linkData.key, {
+      alias: code,
+      url: linkData.url,
+    })
+    showMessage("success", "Views reset! The page will be refreshed in 1 seconds...")
+    setTimeout(() => window.location.reload(), 1000)
+  } catch (e) {
+    showMessage("error", e instanceof Error ? e.message : "操作失败")
+  } finally {
+    isLoading = false
+  }
+}
+
+// 清除统计数据
+async function clearStats() {
+  if (isLoading) return
+  isLoading = true
+  message = null
+
+  try {
+    await updateLink(code, linkData.key, {
+      alias: code,
+      url: linkData.url,
+    })
+    showMessage("success", "Stats cleared! The page will be refreshed in 1 seconds...")
+    setTimeout(() => window.location.reload(), 1000)
+  } catch (e) {
+    showMessage("error", e instanceof Error ? e.message : "操作失败")
+  } finally {
+    isLoading = false
+  }
+}
+
+// 处理管理操作
+async function handleUpdate(value: CreateLink) {
+  if (isLoading) return
+  isLoading = true
+  message = null
+
+  try {
+    await updateLink(code, linkData.key, value)
     showMessage("success", "Update complete! The page will be refreshed in 1 seconds...")
     setTimeout(() => window.location.reload(), 1000)
   } catch (e) {
@@ -50,39 +106,8 @@ async function handleUpdate(action: LinkAction, value?: string | number | null |
 
 // 提交更新（合并URL、过期时间、阅后即焚）
 async function submitUpdate() {
-  const updateData: UpdateData = {}
-
-  if (editingUrl && editingUrl !== linkData.url) {
-    updateData.url = editingUrl
-  }
-
-  if (editingExpireAt !== linkData.expire_at) {
-    updateData.expire_at = editingExpireAt || null
-  }
-
-  if (editingBurnAfterViews !== linkData.burn_after_views?.toString()) {
-    updateData.burn_after_views = editingBurnAfterViews ? parseInt(editingBurnAfterViews) : null
-  }
-
-  if (Object.keys(updateData).length === 0) {
-    showManageModal = false
-    return
-  }
-
-  await handleUpdate("update", updateData)
+  await handleUpdate(updateData)
   showManageModal = false
-}
-
-// 重置访问数
-async function resetViews() {
-  if (!confirm("Are you sure to reset views? This operation cannot be reverted.")) return
-  await handleUpdate("reset_views")
-}
-
-// 清除统计
-async function clearStats() {
-  if (!confirm("Are you sure to clear stats? This operation cannot be reverted.")) return
-  await handleUpdate("clear_stats")
 }
 </script>
 
@@ -119,7 +144,7 @@ async function clearStats() {
         <li><span class="opacity-75 font-semibold">Expire At:</span> {expireAtStr}</li>
         <li>
           <span class="opacity-75 font-semibold">Burn After Views:</span>
-          {linkData.burn_after_views || "never"}
+          {linkData.burnAfterViews || "never"}
         </li>
       </ul>
     </div>
@@ -154,28 +179,6 @@ async function clearStats() {
     </div>
   </div>
 
-  <!-- 快速操作 -->
-  <div class="card bg-base-100">
-    <div class="card-body p-6 space-y-4">
-      <h4 class="card-title text-xl border-b border-base-200 pb-2">Quick Actions</h4>
-      <div class="flex flex-wrap gap-3">
-        <button
-          onclick={resetViews}
-          class="btn btn-warning btn-sm"
-          disabled={isLoading || linkData.views === 0}>
-          Reset Views
-        </button>
-        <button
-          onclick={clearStats}
-          class="btn btn-warning btn-sm"
-          disabled={isLoading || sortedReferrers.length === 0}>
-          Clear Stats
-        </button>
-        <a href="/" class="btn btn-outline btn-sm"> Back to Home </a>
-      </div>
-    </div>
-  </div>
-
   <!-- 删除按钮 -->
   <div class="flex justify-center gap-4 pt-4">
     <button
@@ -195,10 +198,20 @@ async function clearStats() {
 
       <!-- 更新 URL -->
       <div class="form-control mb-4">
+        <label class="label"><span class="label-text font-semibold">Alias</span></label>
+        <input
+          type="url"
+          bind:value={editingState.alias}
+          class="input input-bordered"
+          placeholder="https://example.com" />
+      </div>
+
+      <!-- 更新 URL -->
+      <div class="form-control mb-4">
         <label class="label"><span class="label-text font-semibold">Target URL</span></label>
         <input
           type="url"
-          bind:value={editingUrl}
+          bind:value={editingState.url}
           class="input input-bordered"
           placeholder="https://example.com" />
       </div>
@@ -206,7 +219,10 @@ async function clearStats() {
       <!-- 更新过期时间 -->
       <div class="form-control mb-4">
         <label class="label"><span class="label-text font-semibold">Expire At</span></label>
-        <input type="datetime-local" bind:value={editingExpireAt} class="input input-bordered" />
+        <input
+          type="datetime-local"
+          bind:value={editingState.expireAt}
+          class="input input-bordered" />
         <span class="label-text-alt opacity-60 block mt-2">Leave empty for no expiration</span>
       </div>
 
@@ -215,7 +231,7 @@ async function clearStats() {
         <label class="label"><span class="label-text font-semibold">Burn After Views</span></label>
         <input
           type="number"
-          bind:value={editingBurnAfterViews}
+          bind:value={editingState.burnAfterViews}
           class="input input-bordered"
           placeholder="Leave empty to never burn" />
       </div>
@@ -227,29 +243,12 @@ async function clearStats() {
         </button>
       </div>
 
-      <!-- 快捷操作 -->
-      <div class="divider">Quick Actions</div>
-      <div class="flex flex-wrap gap-2">
-        <button
-          onclick={resetViews}
-          class="btn btn-warning btn-sm"
-          disabled={isLoading || linkData.views === 0}>
-          Reset Views
-        </button>
-        <button
-          onclick={clearStats}
-          class="btn btn-warning btn-sm"
-          disabled={isLoading || sortedReferrers.length === 0}>
-          Clear Stats
-        </button>
-      </div>
-
       <!-- 关闭按钮 -->
       <div class="modal-action">
         <button class="btn" onclick={() => (showManageModal = false)}>Close</button>
       </div>
     </div>
     <!-- 点击背景关闭 -->
-    <div class="modal-backdrop bg-black/50" onclick={() => (showManageModal = false)}></div>
+    <div class="modal-backdrop" onclick={() => (showManageModal = false)}></div>
   </div>
 {/if}

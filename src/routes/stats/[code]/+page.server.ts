@@ -1,18 +1,15 @@
 import { error } from "@sveltejs/kit"
 import type { PageServerLoad } from "./$types"
+import { getLink } from "$lib/server/db"
 
 export const load: PageServerLoad = async ({ params, url, platform }) => {
   const { code } = params
   const key = url.searchParams.get("key")
 
-  if (!platform?.env.LINKS) throw error(500, "KV Binding not found")
-
-  const dataStr = await platform?.env.LINKS.get(code)
-  if (!dataStr) {
+  const data = await getLink(code, platform, true)
+  if (!data) {
     throw error(404, "link not found")
   }
-
-  const data = JSON.parse(dataStr)
 
   // 校验 Key
   if (key !== data.key) {
