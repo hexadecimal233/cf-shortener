@@ -17,6 +17,7 @@ const handleSubmit = async (e: Event) => {
   isLoading = true
   errorMessage = ""
   successLink = null
+  const turnstile = window.turnstile
 
   try {
     const data: Record<string, string> = {
@@ -27,7 +28,7 @@ const handleSubmit = async (e: Event) => {
     if (burnAfterViews) data.burn_after_views = burnAfterViews
     if (creationPassword) data.creation_password = creationPassword
 
-    const turnstileToken = (window as any).turnstile?.getResponse()
+    const turnstileToken = turnstile.getResponse()
     if (turnstileToken) {
       data["cf-turnstile-response"] = turnstileToken
     }
@@ -40,7 +41,7 @@ const handleSubmit = async (e: Event) => {
       body: JSON.stringify(data),
     })
 
-    const result = await response.json()
+    const result = (await response.json()) as any
 
     if (result.success) {
       const link = {
@@ -59,6 +60,7 @@ const handleSubmit = async (e: Event) => {
   } catch (error) {
     errorMessage = "An error occurred while creating the link"
   } finally {
+    turnstile.reset()
     isLoading = false
   }
 }
